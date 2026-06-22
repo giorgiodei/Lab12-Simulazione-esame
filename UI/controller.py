@@ -8,8 +8,11 @@ class Controller:
         # the model, which implements the logic of the program and holds the data
         self._model = model
 
-    def fillDDsRating(self):
-        pass
+    def fillDDsRating(self, dd: ft.Dropdown()):
+        ratings= self._model.getAllRatings()
+        for s in ratings:
+            dd.options.append(ft.dropdown.Option(text=s))
+
 
     def handleCreaGrafo(self, e):
         pass
