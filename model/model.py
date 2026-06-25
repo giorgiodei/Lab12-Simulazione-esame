@@ -6,24 +6,27 @@ from database.DAO import DAO
 class Model:
     def __init__(self):
         self._grafo = nx.Graph()
-        self._stati = []
-        self._idMapStati = {}
+        self._actors = []
+        self._idMapActors = {}
 
-    """def creaGrafo(self, lat, lon, shape):
+    def creaGrafo(self, rmin,rmax):
         self._grafo.clear()
-        self._stati = DAO.getNodes(lat, lon, shape)
-        self._idMapStati = {a.id: a for a in self._stati}
-        self._grafo.add_nodes_from(self._stati)
+        self._actors = DAO.getNodes(rmin,rmax)
+        self._idMapActors = {a.id: a for a in self._actors}
+        self._grafo.add_nodes_from(self._actors)
 
-        coppie = DAO.getEdges()
+        coppie = DAO.getEdges(rmin,rmax)
+
         for c in coppie:
-            idA, idB = c["idA"], c["idB"]
-            if idA in self._idMapStati and idB in self._idMapStati:
-                peso = DAO.getPeso(idA, idB, shape)
-                if peso is not None:
-                    statoA = self._idMapStati[idA]
-                    statoB = self._idMapStati[idB]
-                    self._grafo.add_edge(statoA, statoB, weight=peso)"""
+            idA = c["idA"]
+            idB = c["idB"]
+            a1 = self._idMapActors[idA]
+            a2 = self._idMapActors[idB]
+            income = self.cleanIncome(c["peso"])
+            if self._grafo.has_edge(a1, a2):
+                self._grafo[a1][a2]["weight"] += income
+            else:
+                self._grafo.add_edge(a1, a2, weight=income)
 
 
     def getAllRatings(self):
@@ -31,3 +34,34 @@ class Model:
 
     def getGraphDetails(self):
         return len(self._grafo.nodes), len(self._grafo.edges)
+
+    def cleanIncome(self,income):
+        if income is None:
+            return 0
+        else:
+            income = income.replace("$", "")
+            income = income.replace(",", "")
+            income = income.strip()
+
+            return int(income)
+
+    def getTop5Archi(self):
+        archi = list(self._grafo.edges(data=True))
+
+        archi_ordinati = sorted(
+            archi,
+            key=lambda x: x[2]["weight"],
+            reverse=True
+        )
+
+        return archi_ordinati[:5]
+
+    def getInfoComponenti(self):
+        componenti = list(nx.connected_components(self._grafo))
+
+        if len(componenti) == 0:
+            return 0, []
+
+        componente_maggiore = max(componenti, key=len)
+
+        return len(componenti), componente_maggiore
